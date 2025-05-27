@@ -27,5 +27,6 @@
 %% 请确保你的 Markdown 编辑器支持 Mermaid 渲染
 pie title 编程语言分布
     "Python" : 60
+    "Lua" : 50
     "JavaScript" : 25
     "其他" : 15
