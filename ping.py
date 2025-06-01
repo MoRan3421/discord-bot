@@ -1,29 +1,25 @@
 import discord
-import client
 import psutil
-import time
 from discord.ext import commands
 
-intents = discord.Intents.default()
-intents.message_content = True  # 启用 message_content
-bot = commands.Bot(command_prefix="/", intents=intents)
-bot = commands.Bot(command_prefix="*", intents=intents)  # 改回普通前缀
+class Ping(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
+    @commands.command(name="ping")
+    async def ping_command(self, ctx):
+        latency = round(self.bot.latency * 1000)
+        cpu = psutil.cpu_percent(interval=1)
+        await ctx.send(f"🏓 延迟: {latency}ms | CPU 使用率: {cpu}%")
 
-@bot.tree.command(name="ping", description="查看机器人的延迟和CPU使用率")
-async def ping(interaction: discord.Interaction):
-    latency = round(bot.latency * 1000)  # 机器人延迟，毫秒计算
-    cpu_usage = psutil.cpu_percent(interval=1)  # 计算CPU使用率
-    fps = round(1000 / latency) if latency > 0 else "N/A"  # 以延迟近似FPS
+    @discord.app_commands.command(name="ping", description="获取延迟和CPU使用率")
+    async def ping_slash(self, interaction: discord.Interaction):
+        latency = round(self.bot.latency * 1000)
+        cpu = psutil.cpu_percent(interval=1)
+        await interaction.response.send_message(f"🏓 Pong! 延迟: {latency}ms | CPU 使用率: {cpu}%")
 
-    embed = discord.Embed(
-        title="🏓 Pong!",
-        description=f"📡 **延迟:** {latency}ms\n⚙️ **CPU 使用率:** {cpu_usage}%\n🎮 **近似 FPS:** {fps}",
-        color=discord.Color.green()
-    )
-    embed.set_footer(
-        text=f"请求者: {interaction.user}",
-        icon_url=interaction.user.avatar.url if interaction.user.avatar else discord.Embed.Empty
-    )
+    async def cog_load(self):
+        self.bot.tree.add_command(self.ping_slash)
 
-    await interaction.response.send_message(embed=embed)
+async def setup(bot):
+    await bot.add_cog(Ping(bot))
