@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 import platform
@@ -26,14 +27,13 @@ class BotInfo(commands.Cog):
         total_guilds = len(self.bot.guilds)
         total_users = sum(len(guild.members) for guild in self.bot.guilds)
 
-        # 默认状态
         status_str = "❓ 未知"
-
-        # 获取 bot 在第一个服务器中的状态
         if self.bot.guilds:
             try:
                 guild = self.bot.guilds[0]
-                bot_member = await guild.fetch_member(self.bot.user.id)
+                bot_member = guild.get_member(self.bot.user.id)
+                if bot_member is None:
+                    bot_member = await guild.fetch_member(self.bot.user.id)
                 status_str = self.get_status_emoji(bot_member.status)
             except Exception as e:
                 print(f"[状态获取失败] {e}")
@@ -69,7 +69,20 @@ class BotInfo(commands.Cog):
     @discord.app_commands.command(name="botinfo", description="查看 Bot 的信息和状态")
     async def botinfo_slash(self, interaction: discord.Interaction):
         embed = await self.create_botinfo_embed()
-        await interaction.response.send_message(embed=embed)
+        try:
+            await interaction.response.send_message(embed=embed)
+        except (discord.HTTPException, discord.ClientOSError, asyncio.TimeoutError) as e:
+            print(f"发送 botinfo 消息失败: {e}")
+            try:
+                await interaction.followup.send("⚠️ 发送信息时出错，可能是网络问题，请稍后再试。", ephemeral=True)
+            except Exception as err:
+                print(f"无法发送错误提示消息: {err}")
 
 async def setup(bot):
     await bot.add_cog(BotInfo(bot))
+
+
+
+
+ 
+
